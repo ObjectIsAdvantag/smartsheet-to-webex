@@ -115,35 +115,39 @@ app.listen(port, function () {
 function processRowCreatedEvent(event) {
 
     // Fetch row
-    console.log(`process event: ${event.eventType}`)
+    debug(`process event: ${event.eventType}`)
     const axios = require('axios');
     const sheetUrl = `https://api.smartsheet.com/2.0/sheets/${process.env.SMARTSHEET_ID}/rows/${event.id}`
     const options = {
         timeout: 3000,
-        headers: {'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}`}
-      };
+        headers: { 'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}` }
+    };
 
     axios.get(sheetUrl, options)
-    .then(function (response) {
-        switch (response.status) {
-            case 200:
-                // Fetch cells values
-                processRowValues(response.data.cells);
-                return;
-            default:
-        }
-    })
-    .catch(function (error) {
-      // handle error
-      console.log(error);
-    })
+        .then(function (response) {
+            switch (response.status) {
+                case 200:
+                    // Fetch cells values
+                    processRowValues(response.data.cells);
+                    return;
+                default:
+                    // [PENDING]
+                    debug(`unexpected error with status: ${response.status}`);
+                    return;
+            }
+        })
+        .catch(function (error) {
+            // handle error
+            debug(`Error while requesting SmartSheet API, msg: ${error.message}`);
+            return;
+        })
 }
 
 function processRowValues(cells) {
-    
+
     // Custom logic, ie, print out to Webex Teams
     console.log("new row!")
-    cells.forEach(column => {
-        console.log(`column: ${column.value}`)
+    cells.forEach((column, index) => {
+        console.log(`${index + 1}: ${column.value}`)
     });
 }
