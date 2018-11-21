@@ -19,6 +19,14 @@ if (!process.env.SMARTSHEET_ID) {
     console.log("Please specify a SMARTSHEET_ID sheet identifier");
     process.exit(1);
 }
+if (!process.env.BOT_TOKEN) {
+    console.log("Please specify a BOT_TOKEN env variable");
+    process.exit(1);
+}
+if (!process.env.SPACE_ID) {
+    console.log("Please specify a SPACE_ID sheet identifier");
+    process.exit(1);
+}
 
 
 var express = require("express");
@@ -144,10 +152,28 @@ function processRowCreatedEvent(event) {
 }
 
 function processRowValues(cells) {
+    debug("new row!");
 
-    // Custom logic, ie, print out to Webex Teams
-    console.log("new row!")
-    cells.forEach((column, index) => {
+    // Prep message
+    let message = "new row";
+    // UPDATE FOR YOUR OWN SMARTSHEET COLUMNS
+    /*
+    cells.foreach((column, index) => {
         console.log(`${index + 1}: ${column.value}`)
     });
+    */
+
+    // Print out to Webex Teams
+    const axios = require('axios');
+    axios.post(
+        'https://api.ciscospark.com/v1/messages', 
+        {
+            roomId: process.env.SPACE_ID,
+            markdown: message,
+        },
+        {
+            timeout: 3000,
+            headers: { 'Authorization': `Bearer ${process.env.BOT_TOKEN}` }
+        }
+    );
 }
