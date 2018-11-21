@@ -57,8 +57,7 @@ curl -X GET https://api.smartsheet.com/2.0/sheets \
   -H 'Authorization: Bearer qq0w5090qq0w5090qq0w5090' 
 ```
 
-
-Finally, create a SmartSheet webhook on the command line by typing:
+Almost there, create a SmartSheet webhook on the command line by typing:
 
 ```shell
 curl -X POST https://api.smartsheet.com/2.0/webhooks \
@@ -73,3 +72,15 @@ curl -X POST https://api.smartsheet.com/2.0/webhooks \
     "version": "1"
 }'
 ```
+
+Finally, let's validate the newly created webhook above by updating it (as per the Smartsheet specs). Please replace with the webhook id below:
+
+```shell
+curl -X PUT https://api.smartsheet.com/2.0/webhooks/5481972073031556 \
+  -H 'Authorization: Bearer qq0w5090qq0w5090qq0w5090' \
+  -H 'Content-Type: application/json' \
+  -d '{ "enabled": true }'
+```
+
+That's it, create a new row entry, and check it shows up in the console.
+Note: update the provided sample with [your own custom logic](./webhook.js#146)!
