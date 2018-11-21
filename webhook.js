@@ -10,6 +10,9 @@
  * see Smartsheet webhook spec: https://smartsheet-platform.github.io/api-docs/#creating-a-webhook
  */
 
+// Load environment variables from project .env file
+require('node-env-file')(__dirname + '/.env');
+
 // Check we can request Smartsheet
 if (!process.env.SMARTSHEET_TOKEN) {
     console.log("Please specify a SMARTSHEET_TOKEN env variable");
@@ -151,25 +154,29 @@ function processRowCreatedEvent(event) {
         })
 }
 
-function processRowValues(cells) {
+function processRowValues(row) {
     debug("new row!");
 
     // Prep message
     let message = "new row";
-    // UPDATE FOR YOUR OWN SMARTSHEET COLUMNS
-    /*
-    cells.foreach((column, index) => {
-        console.log(`${index + 1}: ${column.value}`)
-    });
-    */
 
+    // UPDATE FOR YOUR OWN SMARTSHEET COLUMNS
+        /*
+        row.foreach((cell, index) => {
+            console.log(`${index + 1}: ${cell.value}`)
+        });
+        */
+    // OR USE TEMPLAE
+    let mustache = require("mustache");
+    var compiled = mustache.render(process.env.TEAMS_TEMPLATE, { 'row': row }); 
+    
     // Print out to Webex Teams
     const axios = require('axios');
     axios.post(
-        'https://api.ciscospark.com/v1/messages', 
+        'https://api.ciscospark.com/v1/messages',
         {
             roomId: process.env.SPACE_ID,
-            markdown: message,
+            markdown: compiled,
         },
         {
             timeout: 3000,

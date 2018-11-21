@@ -18,6 +18,8 @@
   "dependencies": {
     "axios": "^0.18.0",
     "debug": "^4.1.0",
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "mustache": "^3.0.1",
+    "node-env-file": "^0.1.8"
   }
 }
