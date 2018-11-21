@@ -4,6 +4,7 @@
   "description": "SmartSheet Webhook that posts new row entries to Webex Teams",
   "main": "webhook.js",
   "scripts": {
+    "start": "node webhook.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
