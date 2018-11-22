@@ -193,7 +193,7 @@ app.listen(port, function () {
 // Glitch hosting: 
 let public_url = process.env.PUBLIC_URL;
 if (process.env.PROJECT_DOMAIN) {
-    const public_url = "https://" + process.env.PROJECT_DOMAIN + ".glitch.me";
+    public_url = "https://" + process.env.PROJECT_DOMAIN + ".glitch.me";
 }
 
 // try to create webhook
@@ -225,6 +225,9 @@ if (public_url) {
                             console.log('toobad, the webhook is not enabled, exiting')
                             process.exit(2);
                         }
+                    }
+                    else {
+                        debug(`found webhook with same name but other public URL :-(`);
                     }
                 }
             })
