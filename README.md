@@ -84,3 +84,17 @@ curl -X PUT https://api.smartsheet.com/2.0/webhooks/5481972073031556 \
 
 That's it, create a new row entry, and check it shows up in the console.
 Note: update the provided sample with [your own custom logic](./webhook.js#146)!
+
+
+## Quick start on Glitch
+
+Click [![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](https://glitch.com/edit/#!/import/github/ObjectIsAdvantag/smartsheet-to-webex-teams)
+
+Then open the `.env` file and paste your bot's token, space id, as well as your smartsheet token and sheet it.
+
+You app is all set: the webhook got automatically created from glitch's PROJECT_DOMAIN env variable.
+
+Your app healthcheck is accessible at your application public url.
+
+Go to your smartsheet and start entering new values,
+then customize the mustache template for your smartsheet columns.
