@@ -31,6 +31,8 @@ if (!process.env.SPACE_ID) {
     process.exit(1);
 }
 
+// Timeout for outgoing request
+const DEFAULT_TIMEOUT = 3000; // in seconds
 
 var express = require("express");
 var app = express();
@@ -110,19 +112,6 @@ app.route("/")
         */
     });
 
-
-// Starts the Bot service
-//
-// [WORKAROUND] in some container situation (ie, Cisco Shipped), we need to use an OVERRIDE_PORT to force our bot to start and listen to the port defined in the Dockerfile (ie, EXPOSE), 
-// and not the PORT dynamically assigned by the host or scheduler.
-var port = process.env.PORT || 8080;
-app.listen(port, function () {
-    console.log(`SmartSheet webhook listening at: ${port}`);
-    console.log("   GET  /   : for health checks");
-    console.log("   POST /   : to receive smartsheet payloads");
-});
-
-
 function processRowCreatedEvent(event) {
 
     // Fetch row
@@ -130,7 +119,7 @@ function processRowCreatedEvent(event) {
     const axios = require('axios');
     const sheetUrl = `https://api.smartsheet.com/2.0/sheets/${process.env.SMARTSHEET_ID}/rows/${event.id}`
     const options = {
-        timeout: 3000,
+        timeout: DEFAULT_TIMEOUT,
         headers: { 'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}` }
     };
 
@@ -161,26 +150,130 @@ function processRowValues(row) {
     let message = "new row";
 
     // UPDATE FOR YOUR OWN SMARTSHEET COLUMNS
-        /*
-        row.foreach((cell, index) => {
-            console.log(`${index + 1}: ${cell.value}`)
-        });
-        */
+    /*
+    row.foreach((cell, index) => {
+        console.log(`${index + 1}: ${cell.value}`)
+    });
+    */
     // OR USE TEMPLAE
     let mustache = require("mustache");
-    var compiled = mustache.render(process.env.TEAMS_TEMPLATE, { 'row': row }); 
-    
+    message = mustache.render(process.env.TEAMS_TEMPLATE, { 'row': row });
+
     // Print out to Webex Teams
     const axios = require('axios');
     axios.post(
         'https://api.ciscospark.com/v1/messages',
         {
             roomId: process.env.SPACE_ID,
-            markdown: compiled,
+            markdown: message,
         },
         {
-            timeout: 3000,
+            timeout: DEFAULT_TIMEOUT,
             headers: { 'Authorization': `Bearer ${process.env.BOT_TOKEN}` }
         }
     );
+}
+
+
+// Starts the Bot service
+//
+// [WORKAROUND] in some container situation (ie, Cisco Shipped), we need to use an OVERRIDE_PORT to force our bot to start and listen to the port defined in the Dockerfile (ie, EXPOSE), 
+// and not the PORT dynamically assigned by the host or scheduler.
+var port = process.env.PORT || 8080;
+app.listen(port, function () {
+    console.log(`SmartSheet webhook listening at: ${port}`);
+    console.log("   GET  /   : for health checks");
+    console.log("   POST /   : to receive smartsheet payloads");
+});
+
+//
+// Automatic Webhook creation
+//
+
+// Glitch hosting: 
+let public_url = process.env.PUBLIC_URL;
+if (process.env.PROJECT_DOMAIN) {
+    const public_url = "https://" + process.env.PROJECT_DOMAIN + ".glitch.me";
+}
+
+// try to create webhook
+if (public_url) {
+    // Create webhook if not exists
+    const axios = require('axios');
+    axios.get(
+        'https://api.smartsheet.com/2.0/webhooks',
+        {
+            timeout: DEFAULT_TIMEOUT,
+            headers: { 'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}` }
+        })
+        .then((response) => {
+            let found = false;
+            response.data.data.forEach((webhook) => {
+                if (('sheet' === webhook.scope) && (process.env.SMARTSHEET_ID == webhook.scopeObjectId) && ('from code' === webhook.name)) {
+                    debug(`found webhook for sheet: ${process.env.SMARTSHEET_ID}`)
+
+                    // Check values, and eventually update the webhook
+                    if (webhook.callbackUrl === public_url) {
+                        debug(`found webhook with same public URL and name`);
+                        if (webhook.status === 'ENABLED') {
+                            debug('all good, the webhook is enabled')
+                            found = true;
+                        }
+                        else {
+                            // [TODO] Try to enable the webhook instead of existing
+                            // Fail fast!
+                            console.log('toobad, the webhook is not enabled, exiting')
+                            process.exit(2);
+                        }
+                    }
+                }
+            })
+
+            // if no webhook, create it
+            // Create the webhook
+            if (!found) {
+                debug("creating webhook!")
+                axios.post(
+                    'https://api.smartsheet.com/2.0/webhooks',
+                    {
+                        callbackUrl: public_url,
+                        events: ["*.*"],
+                        name: "from code",
+                        scope: "sheet",
+                        scopeObjectId: process.env.SMARTSHEET_ID,
+                        "version": "1"
+                    },
+                    {
+                        timeout: DEFAULT_TIMEOUT,
+                        headers: { 'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}` }
+                    })
+                    .then((response) => {
+                        switch (response.status) {
+                            case 200:
+                                // [PENDING] Validate the webhook
+                                debug('validate the Webhook');
+
+                                axios.put(
+                                    `https://api.smartsheet.com/2.0/webhooks/${response.data.result.id}`,
+                                    { 
+                                        "enabled": true
+                                    },
+                                    {
+                                        timeout: DEFAULT_TIMEOUT,
+                                        headers: { 'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}` }
+                                    })
+
+                                break;
+
+                            default:
+                                // unexpected
+                                debug(`unexpected status code: ${response.status}`);
+                                break;
+                        }
+                    })
+                    .catch((err) => {
+                        debug(`unexpected err: ${err.message}`);
+                    })
+            }
+        })
 }
