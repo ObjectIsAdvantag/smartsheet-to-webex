@@ -1,12 +1,14 @@
 # Smartsheet to Webex Teams
 
-a Node.js webhook that posts messages to Webex Teams as new rows are filled in a SmartSheet
+a Node.js webhook that posts messages to Webex Teams as new rows are filled in a SmartSheet.
 
-to run this code, please
-1. launch the app with a bot token and Teams space identifier
-2. create a SmartSheet Webhook
-3. validate the SmartSheet Webhook (check the documtend API flow)
-3. post new entries via a Smartsheet form ideally
+To run this code, you will need to:
+1. create a SmartSheet, add a form to it, 
+1. launch the app after entering a bot token and a Webex Teams space identifier in the .env file
+
+2. then you will create a SmartSheet Webhook, and validate it as described in the [SmartSheet Webhook documentation]()
+
+All set! please reach to your Smartsheet's form 
 
 
 ## Launch the SmartSheet to Webex Teams app

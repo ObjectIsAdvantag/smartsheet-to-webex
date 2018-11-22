@@ -34,16 +34,17 @@ if (!process.env.SPACE_ID) {
 // Timeout for outgoing request
 const DEFAULT_TIMEOUT = 3000; // in seconds
 
-var express = require("express");
-var app = express();
+const express = require("express");
+const app = express();
 
-var bodyParser = require("body-parser");
+const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var debug = require("debug")("to-teams");
+//const debug = require("debug")("to-teams");
+const debug = console.log
 
-var started = Date.now();
+const started = Date.now();
 app.route("/")
 
     // healthcheck
@@ -60,7 +61,7 @@ app.route("/")
     .post(function (req, res) {
         debug("webhook invoked!");
 
-        // Is it an handshake? (at creation then every 100 calls)
+        // Is it a validation handshake? (fired at creation then every 100 calls)
         if (req.headers['smartsheet-hook-challenge']) {
             let challenge = req.headers['smartsheet-hook-challenge'];
             debug(`received handshake challenge: ${challenge}`);
@@ -80,9 +81,11 @@ app.route("/")
             return;
         }
 
-        // [TODO] May be interesting to also test:
+        // Test the event ties to the correct smartsheet
         //   - the smartsheet id: req.body.scopeObjectId
-        //   - the webhook id: req.body.webhookId
+        if (process.env.SMARTSHEET_ID !== req.body.scopeObjectId) {
+            // [PENDING] loag message and send 200 back
+        }
 
         // Event is ready to be processed, let's send a response to smartsheet without waiting any longer
         // Ack webhook trigger
@@ -176,140 +179,7 @@ app.listen(port, function () {
     console.log(`SmartSheet webhook listening at: ${port}`);
     console.log("   GET  /   : for health checks");
     console.log("   POST /   : to receive smartsheet payloads");
+
+    // Automatic Webhook creation
+    require('./register.js')
 });
-
-//
-// Automatic Webhook creation
-//
-
-// default Webhook URL read from env variable
-let public_url = process.env.PUBLIC_URL;
-
-// automatically compute URL in case of Glitch hosting
-if (process.env.PROJECT_DOMAIN) {
-    public_url = "https://" + process.env.PROJECT_DOMAIN + ".glitch.me";
-}
-
-// Create webhook if it does not already exists
-if (public_url) {
-    // List webhooks for all Smartsheets
-    const axios = require('axios');
-    axios.get(
-        'https://api.smartsheet.com/2.0/webhooks',
-        {
-            timeout: DEFAULT_TIMEOUT,
-            headers: { 'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}` }
-        })
-        .then((response) => {
-            let found = false;
-            // look for a webhook associated to our smartsheet
-            // and created by this code (webhook.ame === "smartsheet-to-webexteams")
-            response.data.data.forEach((webhook) => {
-                if (('sheet' === webhook.scope) && (process.env.SMARTSHEET_ID == webhook.scopeObjectId) && ('smartsheet-to-webexteams' === webhook.name)) {
-                    debug(`found webhook for sheet: ${process.env.SMARTSHEET_ID}`)
-
-                    // Check values, and eventually update the webhook
-                    if (webhook.callbackUrl === public_url) {
-                        debug(`found webhook with same public URL and name`);
-
-                        if (found) {
-                            debug(`looks like several webhook exists for the same spreadsheet, and with same name. Would recommend to remove the latter manually, with id: ${webhook.id}.`)
-                        }
-                        found = true;
-
-                        if (webhook.status === 'ENABLED') {
-                            debug('looks good: the webhook is enabled')
-                        }
-                        else {
-                            // [TODO] Try to enable the webhook instead of existing
-                            debug('looks bad: the webhook is not enabled, and current implementation does not fill that gap');
-
-                            // Fail fast
-                            console.log('sorry, we found a webhook for this sheet, but it is not enabled.')
-                            console.log(`please delete webhook: ${webhook.id} and restart the app.`)
-                            process.exit(2);
-                        }
-                    }
-                    else {
-                        debug(`found webhook with same name but other public URL :-(`);
-                    }
-                }
-            })
-
-            // if no webhook, create it
-            if (!found) {
-                debug("no webhook detected, creating new webhook")
-                axios.post(
-                    'https://api.smartsheet.com/2.0/webhooks',
-                    {
-                        callbackUrl: public_url,
-                        events: ["*.*"],
-                        name: "smartsheet-to-webexteams",
-                        scope: "sheet",
-                        scopeObjectId: process.env.SMARTSHEET_ID,
-                        "version": "1"
-                    },
-                    {
-                        timeout: DEFAULT_TIMEOUT,
-                        headers: { 'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}` }
-                    })
-                    .then((response) => {
-                        switch (response.status) {
-                            case 200:
-                                debug(`webhook created with id: ${response.data.result.id}`);
-                                debug('now sending PUT request to validate the webhook');
-
-                                axios.put(
-                                    `https://api.smartsheet.com/2.0/webhooks/${response.data.result.id}`,
-                                    {
-                                        "enabled": true
-                                    },
-                                    {
-                                        timeout: DEFAULT_TIMEOUT,
-                                        headers: { 'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}` }
-                                    })
-                                    .then((response) => {
-                                        switch (response.status) {
-                                            case 200:
-                                                debug('webhook successfully valided');
-                                                break;
-
-                                            default:
-                                                debug(`webhook could not be valided, status code: ${response.status}`);
-
-                                                // Fail fast
-                                                console.log('cannot validate webhook for your smartsheet, please try again by restarting this app.');
-                                                console.log('if validation fails again, please proceed manually');
-                                                process.exit(3);
-                                        }
-                                    })
-                                    .catch((err) => {
-                                        debug(`webhook could not be valided, err: ${err.message}`);
-
-                                        // Fail fast
-                                        console.log('cannot validate webhook for your smartsheet, please try again by restarting this app.');
-                                        console.log('if validation fails again, please proceed manually');
-                                        process.exit(4);
-                                    })
-                                break;
-
-                            default:
-                                debug(`webhook could not be created, status code: ${response.status}`);
-
-                                // Fail fast
-                                console.log('cannot create webhook for your smartsheet, please try again by restarting this app.');
-                                console.log('if creation fails again, please proceed manually');
-                                process.exit(5);
-                        }
-                    })
-                    .catch((err) => {
-                        debug(`webhook could not be created, err: ${err.message}`);
-
-                        // Fail fast
-                        console.log('cannot create webhook for your smartsheet, please try again by restarting this app.');
-                        console.log('if creation fails again, please proceed manually');
-                        process.exit(6);
-                    })
-            }
-        })
-}
