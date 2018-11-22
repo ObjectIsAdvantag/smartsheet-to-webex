@@ -146,18 +146,10 @@ function processRowCreatedEvent(event) {
 function processRowValues(row) {
     debug("new row!");
 
-    // Prep message
-    let message = "new row";
-
-    // UPDATE FOR YOUR OWN SMARTSHEET COLUMNS
-    /*
-    row.foreach((cell, index) => {
-        console.log(`${index + 1}: ${cell.value}`)
-    });
-    */
-    // OR USE TEMPLAE
-    let mustache = require("mustache");
-    message = mustache.render(process.env.TEAMS_TEMPLATE, { 'row': row });
+    // Prep message via Mustach template
+    const mustache = require("mustache");
+    const template = process.env.TEAMS_TEMPLATE || "New row, first colum contains: {{row.0.value}}";
+    const message = mustache.render(template, { 'row': row });
 
     // Print out to Webex Teams
     const axios = require('axios');
@@ -190,15 +182,17 @@ app.listen(port, function () {
 // Automatic Webhook creation
 //
 
-// Glitch hosting: 
+// default Webhook URL read from env variable
 let public_url = process.env.PUBLIC_URL;
+
+// automatically compute URL in case of Glitch hosting
 if (process.env.PROJECT_DOMAIN) {
     public_url = "https://" + process.env.PROJECT_DOMAIN + ".glitch.me";
 }
 
-// try to create webhook
+// Create webhook if it does not already exists
 if (public_url) {
-    // Create webhook if not exists
+    // List webhooks for all Smartsheets
     const axios = require('axios');
     axios.get(
         'https://api.smartsheet.com/2.0/webhooks',
@@ -208,21 +202,31 @@ if (public_url) {
         })
         .then((response) => {
             let found = false;
+            // look for a webhook associated to our smartsheet
+            // and created by this code (webhook.ame === "smartsheet-to-webexteams")
             response.data.data.forEach((webhook) => {
-                if (('sheet' === webhook.scope) && (process.env.SMARTSHEET_ID == webhook.scopeObjectId) && ('from code' === webhook.name)) {
+                if (('sheet' === webhook.scope) && (process.env.SMARTSHEET_ID == webhook.scopeObjectId) && ('smartsheet-to-webexteams' === webhook.name)) {
                     debug(`found webhook for sheet: ${process.env.SMARTSHEET_ID}`)
 
                     // Check values, and eventually update the webhook
                     if (webhook.callbackUrl === public_url) {
                         debug(`found webhook with same public URL and name`);
+
+                        if (found) {
+                            debug(`looks like several webhook exists for the same spreadsheet, and with same name. Would recommend to remove the latter manually, with id: ${webhook.id}.`)
+                        }
+                        found = true;
+
                         if (webhook.status === 'ENABLED') {
-                            debug('all good, the webhook is enabled')
-                            found = true;
+                            debug('looks good: the webhook is enabled')
                         }
                         else {
                             // [TODO] Try to enable the webhook instead of existing
-                            // Fail fast!
-                            console.log('toobad, the webhook is not enabled, exiting')
+                            debug('looks bad: the webhook is not enabled, and current implementation does not fill that gap');
+                            
+                            // Fail fast
+                            console.log('sorry, we found a webhook for this sheet, but it is not enabled.')
+                            console.log(`please delete webhook: ${webhook.id} and restart the app.`)
                             process.exit(2);
                         }
                     }
@@ -233,7 +237,6 @@ if (public_url) {
             })
 
             // if no webhook, create it
-            // Create the webhook
             if (!found) {
                 debug("creating webhook!")
                 axios.post(
@@ -241,7 +244,7 @@ if (public_url) {
                     {
                         callbackUrl: public_url,
                         events: ["*.*"],
-                        name: "from code",
+                        name: "smartsheet-to-webexteams",
                         scope: "sheet",
                         scopeObjectId: process.env.SMARTSHEET_ID,
                         "version": "1"
