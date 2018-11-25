@@ -1,6 +1,7 @@
 
-//const debug = require("debug")("register");
-const debug = console.log
+// Loggers
+const debug = require("debug")("register");
+const fine = require("debug")("register:fine");
 
 // Timeout for outgoing request
 const DEFAULT_TIMEOUT = 3000; // in seconds
@@ -13,9 +14,13 @@ if (process.env.PROJECT_DOMAIN) {
     public_url = "https://" + process.env.PROJECT_DOMAIN + ".glitch.me";
 }
 
-// Create webhook if it does not already exists
-if (public_url) {
+if (!public_url) {
+    debug('no public URL found, will not create the SmartSheet webhook')
+}
+else {
+    // Create webhook if it does not already exists
     debug(`registering a SmartSheet webhook listening at: ${public_url}`)
+
     // List webhooks for all Smartsheets
     const axios = require('axios');
     axios.get(

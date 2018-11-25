@@ -41,15 +41,18 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-//const debug = require("debug")("to-teams");
-const debug = console.log
+// Loggers
+const debug = require("debug")("s2wt");
+const fine = require("debug")("s2wt:fine");
+const logChallenge = require("debug")("challenge");
+const fineChallenge = require("debug")("challenge:fine");
 
 const started = Date.now();
 app.route("/")
 
     // healthcheck
     .get(function (req, res) {
-        debug("helthcheck invoked!");
+        fine("helthcheck invoked!");
         res.json({
             message: "Congrats, your app is up and running",
             since: new Date(started).toISOString(),
@@ -59,12 +62,12 @@ app.route("/")
 
     // smartsheet webhook endpoint 
     .post(function (req, res) {
-        debug("webhook invoked!");
+        fine("webhook invoked!");
 
         // Is it a validation handshake? (fired at creation then every 100 calls)
         if (req.headers['smartsheet-hook-challenge']) {
             let challenge = req.headers['smartsheet-hook-challenge'];
-            debug(`received handshake challenge: ${challenge}`);
+            fine(`received handshake challenge: ${challenge}`);
             res.status(200).json({
                 smartsheetHookResponse: challenge
             });
@@ -73,7 +76,7 @@ app.route("/")
 
         // is it a Smartsheet Webhook event?
         if ((!req.body) || ('sheet' !== req.body.scope) || (!req.body.events)) {
-            console.log("unexpected payload, aborting...");
+            console.log("unexpected payload: not a SmartSheet webhook. Aborting...");
             res.status(400).json({
                 message: "Bad payload for Webhook",
                 details: "either the app is not properly configured, or Smartsheet is running a new API version"
@@ -83,8 +86,11 @@ app.route("/")
 
         // Test the event ties to the correct smartsheet
         //   - the smartsheet id: req.body.scopeObjectId
-        if (process.env.SMARTSHEET_ID !== req.body.scopeObjectId) {
-            // [PENDING] loag message and send 200 back
+        if (process.env.SMARTSHEET_ID != req.body.scopeObjectId) {
+            // Log a message and send 200 back
+            debug(`ignoring webhook event, as it concerns a different stylesheet, wth id: ${req.body.scopeObjectId} instead of expected id: ${process.env.SMARTSHEET_ID}`)
+            res.status(200).json({ message: "fine, though wrong smartsheet. The event is being processed by the webhook." });
+            return;
         }
 
         // Event is ready to be processed, let's send a response to smartsheet without waiting any longer
@@ -94,7 +100,7 @@ app.route("/")
         // Check for row created events
         req.body.events.forEach(event => {
             if (event && ('created' === event.eventType) && ('row' === event.objectType)) {
-                debug('confirmed new row/created event');
+                fine('confirmed new row/created event');
 
                 // process incoming resource/event, see https://developer.webex.com/webhooks-explained.html
                 processRowCreatedEvent(event);
@@ -118,7 +124,7 @@ app.route("/")
 function processRowCreatedEvent(event) {
 
     // Fetch row
-    debug(`process event: ${event.eventType}`)
+    fine(`processing event: ${event.eventType}`)
     const axios = require('axios');
     const sheetUrl = `https://api.smartsheet.com/2.0/sheets/${process.env.SMARTSHEET_ID}/rows/${event.id}`
     const options = {
@@ -146,13 +152,45 @@ function processRowCreatedEvent(event) {
         })
 }
 
+// Invoked as a new row is created
 function processRowValues(row) {
-    debug("new row!");
+    fine("new row!");
+
+    // Check entries
+    let checker = "GOOD";
+    let guess = row[4];
+    if (!guess.value) {
+        logChallenge(`EMPTY guess entry for participant: ${row[1]}`);
+        checker = "INVALID: empty guess";
+    }
+    else {
+        // Regarding the weight, the rules state that people MUST enter
+        // a weight in kg “with an approximation to the second decimal place”.
+        if ((typeof guess.value) !== 'number') {
+            let parsed = guess.value.match(/(\d{0,2})[\.|,](\d{0,2})/);
+            if (parsed.length != 3) {
+                logChallenge(`guess does not match the XX.YY regexp: ${guess.value}`)
+                checker = `INVALID: guess ${guess.value} does not match XX.YY format`;
+            }
+            else {
+                let entry = (parsed[1] === '') ? 0 : parsed[1];
+                entry += '.';
+                entry += (parsed[2] === '') ? 0 : parsed[2];
+                guess = parseFloat(entry);
+                logChallenge(`value: ${guess} will be considered for guess: ${elem.guess}`);
+                checker = `GOOD: considering ${guess} as the guess`;
+
+            }
+        }
+        else {
+            checker = `GOOD: confirmed ${guess.value} as the guess`;
+        }
+    }
 
     // Prep message via Mustach template
     const mustache = require("mustache");
     const template = process.env.TEAMS_TEMPLATE || "New row, first colum contains: {{row.0.value}}";
-    const message = mustache.render(template, { 'row': row });
+    const message = mustache.render(template, { 'row': row, 'check': checker });
 
     // Print out to Webex Teams
     const axios = require('axios');
@@ -166,7 +204,19 @@ function processRowValues(row) {
             timeout: DEFAULT_TIMEOUT,
             headers: { 'Authorization': `Bearer ${process.env.BOT_TOKEN}` }
         }
-    );
+    ).then((response) => {
+        switch (reponse.status) {
+            case 200:
+                logChallenge('entry successfully posted to Teams');
+                break;
+
+            default:
+                logChallenge(`entry NOT POSTED to Teams, status code: ${response.status}`);
+                break;
+        }
+    }).catch((err) => {
+        logChallenge(`entry NOT POSTED to Teams, err: ${err.message}`);
+    })
 }
 
 
