@@ -56,6 +56,7 @@ app.route("/")
         res.json({
             message: "Congrats, your app is up and running",
             since: new Date(started).toISOString(),
+            version: require('./package.json').version,
             tip: "Register your app as a Smartsheet WebHook to start receiving events"
         });
     })
