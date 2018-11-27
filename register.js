@@ -62,7 +62,7 @@ else {
                     }
                     else {
                         // if a webhook already exists but pointing somewhere else, just raise a warning
-                        console.log(`WARNING: the webhook with id: ${webhook.id} ties to your sheet but points to another public URL. You may be interested to give a look and remove this webhook entry. Continuing...`);        
+                        debug(`WARNING: the webhook with id: ${webhook.id} ties to your sheet but points to another public URL. You may be interested to give a look and remove this webhook entry. Continuing...`);        
                     }
                 }
             })

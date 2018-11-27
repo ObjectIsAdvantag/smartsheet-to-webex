@@ -176,15 +176,21 @@ function processRowValues(row) {
             else {
                 let entry = (parsed[1] === '') ? 0 : parsed[1];
                 entry += '.';
-                entry += (parsed[2] === '') ? 0 : parsed[2];
+                entry += (parsed[2] === '') ? 0 : parsed[2].substring(0,2);
                 let considered = parseFloat(entry);
                 logChallenge(`value: ${considered} will be considered for entry: ${guess.value}`);
                 checker = `**GOOD**: considering ${considered} as the guess`;
-
             }
         }
         else {
-            checker = `**GOOD**: confirmed ${guess.value} as the guess`;
+            // Check the number is positive
+            if (guess.value < 0) {
+                checker = `**INVALID**: negative values are not accepted`;
+            }
+            else {
+                // Check the format matches
+                checker = `**GOOD**: considering ${guess.value} as the guess`;
+            }
         }
     }
 
