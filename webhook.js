@@ -158,33 +158,33 @@ function processRowValues(row) {
     fine("new row!");
 
     // Check entries
-    let checker = "GOOD";
+    let checker = "**GOOD**";
     let guess = row[4];
     if (!guess.value) {
         logChallenge(`EMPTY guess entry for participant: ${row[1]}`);
-        checker = "INVALID: empty guess";
+        checker = "**INVALID**: empty guess";
     }
     else {
         // Regarding the weight, the rules state that people MUST enter
         // a weight in kg “with an approximation to the second decimal place”.
         if ((typeof guess.value) !== 'number') {
             let parsed = guess.value.match(/(\d{0,2})[\.|,](\d{0,2})/);
-            if (parsed.length != 3) {
+            if ((!parsed) || (parsed.length != 3)) {
                 logChallenge(`guess does not match the XX.YY regexp: ${guess.value}`)
-                checker = `INVALID: guess ${guess.value} does not match XX.YY format`;
+                checker = `**INVALID**: guess ${guess.value} does not match XX.YY format`;
             }
             else {
                 let entry = (parsed[1] === '') ? 0 : parsed[1];
                 entry += '.';
                 entry += (parsed[2] === '') ? 0 : parsed[2];
-                guess = parseFloat(entry);
-                logChallenge(`value: ${guess} will be considered for guess: ${elem.guess}`);
-                checker = `GOOD: considering ${guess} as the guess`;
+                let considered = parseFloat(entry);
+                logChallenge(`value: ${considered} will be considered for entry: ${guess.value}`);
+                checker = `**GOOD**: considering ${considered} as the guess`;
 
             }
         }
         else {
-            checker = `GOOD: confirmed ${guess.value} as the guess`;
+            checker = `**GOOD**: confirmed ${guess.value} as the guess`;
         }
     }
 

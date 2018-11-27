@@ -109,8 +109,8 @@ else {
                                                 debug(`webhook could not be valided, status code: ${response.status}`);
 
                                                 // Fail fast
-                                                console.log('cannot validate webhook for your smartsheet, please try again by restarting this app.');
-                                                console.log('if validation fails again, please proceed manually');
+                                                console.log(`cannot validate webhook for your smartsheet, status: ${response.status}`);
+                                                console.log('please try again by restarting this app. Ff validation fails again, please proceed manually');
                                                 process.exit(3);
                                         }
                                     })
@@ -141,7 +141,11 @@ else {
                         console.log('if creation fails again, please proceed manually');
                         process.exit(6);
                     })
+                return;
             }
+
+            // if webhook found, announce the great news
+            debug("webhook found, all good, continuing...")
         })
         .catch((err) => {
             debug(`cannot list webhooks, err: ${err.message}`)
