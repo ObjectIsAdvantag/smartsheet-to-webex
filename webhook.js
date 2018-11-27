@@ -212,7 +212,7 @@ function processRowValues(row) {
             headers: { 'Authorization': `Bearer ${process.env.BOT_TOKEN}` }
         }
     ).then((response) => {
-        switch (reponse.status) {
+        switch (response.status) {
             case 200:
                 logChallenge('entry successfully posted to Teams');
                 break;
