@@ -3,12 +3,28 @@
 a Node.js webhook that posts messages to Webex Teams as new rows are filled in a SmartSheet.
 
 To run this code, you will need to:
-1. create a SmartSheet, add a form to it, 
-1. launch the app after entering a bot token and a Webex Teams space identifier in the .env file
+1. create a SmartSheet, add a form to it, and pick your Smartsheet info (sheet id and access token)
+2. launch the app after entering the required environment variables (check below for an example on Heroku)
 
-2. then you will create a SmartSheet Webhook, and validate it as described in the [SmartSheet Webhook documentation]()
+UPDATE: the webhook creation and validation by the SmartSheet API are now directly handled from the webhook app, check [register.js](./register.js) for details. 
 
-All set! please reach to your Smartsheet's form 
+All set! please reach to your Smartsheet's form and enter a guess.
+You'll see your message poping up in Teams.
+Update the template to reflect the structure of your smartsheet.
+
+
+## Quick start on Glitch
+
+Click [![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](https://glitch.com/edit/#!/import/github/ObjectIsAdvantag/smartsheet-to-webex-teams)
+
+Then open the `.env` file and paste your bot's token, space id, as well as your smartsheet token and sheet id.
+
+You app is all set: the webhook got automatically created from glitch's PROJECT_DOMAIN env variable.
+
+Your app healthcheck is accessible at your application public url.
+
+Go to your smartsheet and start entering new values,
+then customize the mustache template for your smartsheet columns.
 
 
 ## Launch the SmartSheet to Webex Teams app
@@ -19,7 +35,7 @@ For **Mac, Linux and bash users**, open a terminal and type:
 git clone https://github.com/CiscoDevNet/smartsheet-to-webex-teams
 cd smartsheet-to-webex-teams
 npm install
-DEBUG=webhook* BOT_TOKEN=XXXXXXXXX SPACE_ID=YYYYYYYYYYY node webhook.js
+DEBUG=s2wt*,register*,challenge* SMARTSHEET_TOKEN="ka5XXXXXXXXXXXXXXXX" SMARTSHEET_ID="627552342630404" BOT_TOKEN="MmQ5ZTBYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" SPACE_ID="Y2lzY29zZZZZZZZZZZZZZZZZZZZZZZZZ" PUBLIC_URL="https://e4a1e175.ngrok.io" node webhook.js
 ```
 
 For **Windows users**, open a command shell and type:
@@ -31,8 +47,14 @@ npm install
 set DEBUG=webhook*
 set BOT_TOKEN=XXXXXXXXX
 set SPACE_ID=YYYYYYYYYYY
+...
 node webhook.js
 ```
+
+And here is an example of environment variables on Heroku:
+
+![Heroku env variables](img/heroku_env.png)
+
 
 **Done, your webhook is live**
 
@@ -44,7 +66,9 @@ curl -X GET http://localhost:8080
 ```
 
 
-## To register your app as a Smartsheet Webhook
+## To manually register your app as a Smartsheet Webhook
+
+Note: this step is now optional as the registration is automatically performed at launch.
 
 Create a Smartsheet API token from your smartsheet account:
 - login
@@ -86,17 +110,3 @@ curl -X PUT https://api.smartsheet.com/2.0/webhooks/5481972073031556 \
 
 That's it, create a new row entry, and check it shows up in the console.
 Note: update the provided sample with [your own custom logic](./webhook.js#146)!
-
-
-## Quick start on Glitch
-
-Click [![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](https://glitch.com/edit/#!/import/github/ObjectIsAdvantag/smartsheet-to-webex-teams)
-
-Then open the `.env` file and paste your bot's token, space id, as well as your smartsheet token and sheet it.
-
-You app is all set: the webhook got automatically created from glitch's PROJECT_DOMAIN env variable.
-
-Your app healthcheck is accessible at your application public url.
-
-Go to your smartsheet and start entering new values,
-then customize the mustache template for your smartsheet columns.
