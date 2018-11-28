@@ -163,7 +163,7 @@ function processRowValues(row) {
 
     // An entry is invalid if it has no guess, no profile
     // it also needs a full name or a first and last name
-    if (!(guess.value && (row[6]) && (row[1] || (row[2] && row[3])))) {
+    if (!(checkValid(row))) {
         logChallenge(`EMPTY guess, profile or name for participant: ${row[1]}`);
         checker = "**INVALID**: empty guess, profile or name";
     }
@@ -179,7 +179,7 @@ function processRowValues(row) {
             else {
                 let entry = (parsed[1] === '') ? 0 : parsed[1];
                 entry += '.';
-                entry += (parsed[2] === '') ? 0 : parsed[2].substring(0,2);
+                entry += (parsed[2] === '') ? 0 : parsed[2].substring(0, 2);
                 let considered = parseFloat(entry);
                 logChallenge(`value: ${considered} will be considered for entry: ${guess.value}`);
                 checker = `**GOOD**: considering ${considered} as the guess`;
@@ -243,3 +243,25 @@ app.listen(port, function () {
     // Automatic Webhook creation
     require('./register.js')
 });
+
+
+function checkValid(row) {
+    // no challenge
+    if (!row[0]) {
+        return false;
+    }
+    // no guess
+    if (!row[4]) {
+        return false;
+    }
+    // no profile
+    if (!row[6]) {
+        return false;
+    }
+    // no name
+    if (!(row[1] || (row[2] && row[3]))) {
+        return false;
+    }
+
+    return true;
+}
