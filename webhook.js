@@ -164,7 +164,7 @@ function processRowValues(row) {
     // An entry is invalid if it has no guess, no profile
     // it also needs a full name or a first and last name
     if (!(checkValid(row))) {
-        logChallenge(`EMPTY guess, profile or name for participant: ${row[1]}`);
+        logChallenge(`EMPTY guess, profile or name for participant: ${row[1].value}`);
         checker = "**INVALID**: empty guess, profile or name";
     }
     else {
@@ -247,19 +247,19 @@ app.listen(port, function () {
 
 function checkValid(row) {
     // no challenge
-    if (!row[0]) {
+    if (!row[0].value) {
         return false;
     }
     // no guess
-    if (!row[4]) {
+    if (!row[4].value) {
         return false;
     }
     // no profile
-    if (!row[6]) {
+    if (!row[6].value) {
         return false;
     }
     // no name
-    if (!(row[1] || (row[2] && row[3]))) {
+    if (!(row[1].value || (row[2].value && row[3].value))) {
         return false;
     }
 
