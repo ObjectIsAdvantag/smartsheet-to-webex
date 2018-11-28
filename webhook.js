@@ -163,7 +163,7 @@ function processRowValues(row) {
 
     // An entry is invalid if it has no guess, no profile
     // it also needs a full name or a first and last name
-    if (!guess.value || !row[6] || (!row[1] || !(row[2] && row[3]))) {
+    if (!(guess.value && (row[6]) && (row[1] || (row[2] && row[3])))) {
         logChallenge(`EMPTY guess, profile or name for participant: ${row[1]}`);
         checker = "**INVALID**: empty guess, profile or name";
     }
