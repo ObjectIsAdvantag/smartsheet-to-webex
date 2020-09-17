@@ -5,7 +5,7 @@
 
 /* 
  * a Smartsheet webhook based on Express.js,
- * and posting back to Webex Teams.
+ * and posting back to Webex.
  * 
  * see Smartsheet webhook spec: https://smartsheet-platform.github.io/api-docs/#creating-a-webhook
  */
@@ -199,13 +199,13 @@ function processRowValues(row) {
 
     // Prep message via Mustach template
     const mustache = require("mustache");
-    const template = process.env.TEAMS_TEMPLATE || "New row, first colum contains: {{row.0.value}}";
+    const template = process.env.MESSAGING_TEMPLATE || "New row, first colum contains: {{row.0.value}}";
     const message = mustache.render(template, { 'row': row, 'check': checker });
 
-    // Print out to Webex Teams
+    // Print out to Webex
     const axios = require('axios');
     axios.post(
-        'https://api.ciscospark.com/v1/messages',
+        'https://webexapis.com/v1/messages',
         {
             roomId: process.env.SPACE_ID,
             markdown: message,
@@ -217,15 +217,15 @@ function processRowValues(row) {
     ).then((response) => {
         switch (response.status) {
             case 200:
-                logChallenge('entry successfully posted to Teams');
+                logChallenge('entry successfully posted to Webex');
                 break;
 
             default:
-                logChallenge(`entry NOT POSTED to Teams, status code: ${response.status}`);
+                logChallenge(`entry NOT POSTED to Webex, status code: ${response.status}`);
                 break;
         }
     }).catch((err) => {
-        logChallenge(`entry NOT POSTED to Teams, err: ${err.message}`);
+        logChallenge(`entry NOT POSTED to Webex, err: ${err.message}`);
     })
 }
 

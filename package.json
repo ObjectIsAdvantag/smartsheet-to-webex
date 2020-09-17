@@ -1,7 +1,7 @@
 {
-  "name": "smartsheet-to-webex-teams",
+  "name": "smartsheet-to-webex",
   "version": "1.2.3",
-  "description": "SmartSheet Webhook that posts new row entries to Webex Teams",
+  "description": "SmartSheet Webhook that posts new row entries to Webex",
   "main": "webhook.js",
   "scripts": {
     "start": "node webhook.js",
@@ -9,7 +9,6 @@
   },
   "keywords": [
     "webex",
-    "teams",
     "smartsheet",
     "api"
   ],

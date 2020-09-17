@@ -1,6 +1,6 @@
-# Smartsheet to Webex Teams
+# Smartsheet to Webex
 
-a Node.js webhook that posts messages to Webex Teams as new rows are filled in a SmartSheet.
+a Node.js webhook that posts messages to Webex as new rows are filled in a SmartSheet.
 
 To run this code, you will need to:
 1. create a SmartSheet, add a form to it, and pick your Smartsheet info (sheet id and access token)
@@ -9,13 +9,13 @@ To run this code, you will need to:
 UPDATE: the webhook creation and validation by the SmartSheet API are now directly handled from the webhook app, check [register.js](./register.js) for details. 
 
 All set! please reach to your Smartsheet's form and enter a guess.
-You'll see your message poping up in Teams.
+You'll see your message poping up in your Webex Messaging client.
 Update the template to reflect the structure of your smartsheet.
 
 
 ## Quick start on Glitch
 
-Click [![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](https://glitch.com/edit/#!/import/github/ObjectIsAdvantag/smartsheet-to-webex-teams)
+Click [![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](https://glitch.com/edit/#!/import/github/ObjectIsAdvantag/smartsheet-to-webex)
 
 Then open the `.env` file and paste your bot's token, space id, as well as your smartsheet token and sheet id.
 
@@ -27,13 +27,13 @@ Go to your smartsheet and start entering new values,
 then customize the mustache template for your smartsheet columns.
 
 
-## Launch the SmartSheet to Webex Teams app
+## Launch the SmartSheet to Webex app
 
 For **Mac, Linux and bash users**, open a terminal and type:
 
 ```shell
-git clone https://github.com/CiscoDevNet/smartsheet-to-webex-teams
-cd smartsheet-to-webex-teams
+git clone https://github.com/CiscoDevNet/smartsheet-to-webex
+cd smartsheet-to-webex
 npm install
 DEBUG=s2wt*,register*,challenge* SMARTSHEET_TOKEN="ka5XXXXXXXXXXXXXXXX" SMARTSHEET_ID="627552342630404" BOT_TOKEN="MmQ5ZTBYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" SPACE_ID="Y2lzY29zZZZZZZZZZZZZZZZZZZZZZZZZ" PUBLIC_URL="https://e4a1e175.ngrok.io" node webhook.js
 ```
@@ -41,8 +41,8 @@ DEBUG=s2wt*,register*,challenge* SMARTSHEET_TOKEN="ka5XXXXXXXXXXXXXXXX" SMARTSHE
 For **Windows users**, open a command shell and type:
 
 ```shell
-git clone https://github.com/CiscoDevNet/smartsheet-to-webex-teams
-cd smartsheet-to-webex-teams
+git clone https://github.com/CiscoDevNet/smartsheet-to-webex
+cd smartsheet-to-webex
 npm install
 set DEBUG=webhook*
 set BOT_TOKEN=XXXXXXXXX

@@ -32,9 +32,9 @@ else {
         .then((response) => {
             let found = false;
             // look for a webhook associated to our smartsheet
-            // and created by this code (webhook.ame === "smartsheet-to-webexteams")
+            // and created by this code (webhook.ame === "smartsheet-to-webex")
             response.data.data.forEach((webhook) => {
-                if (('sheet' === webhook.scope) && (process.env.SMARTSHEET_ID == webhook.scopeObjectId) && ('smartsheet-to-webexteams' === webhook.name)) {
+                if (('sheet' === webhook.scope) && (process.env.SMARTSHEET_ID == webhook.scopeObjectId) && ('smartsheet-to-webex' === webhook.name)) {
                     debug(`found webhook for your sheet: ${process.env.SMARTSHEET_ID}`)
 
                     // Check values, and eventually update the webhook
@@ -75,7 +75,7 @@ else {
                     {
                         callbackUrl: public_url,
                         events: ["*.*"],
-                        name: "smartsheet-to-webexteams",
+                        name: "smartsheet-to-webex",
                         scope: "sheet",
                         scopeObjectId: process.env.SMARTSHEET_ID,
                         "version": "1"
